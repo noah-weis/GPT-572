@@ -1,0 +1,5 @@
+datasets==3.6.0
+optuna==4.3.0
+tiktoken==0.9.0
+torch==2.5.1+cu121
+tqdm==4.67.1
