@@ -37,5 +37,5 @@ python main.py --clear     # Clear all saved models and tuning data
 - If you would like to see the program in action, turn on development mode in config
 - The whole project was developed on Windows, not many changes should be needed for Linux but I havn't tested.
 - If you would like to actually train a fresh model, you'll need a long time and a nice GPU.
-- I've left my best model in the models folder so you don't have to do training.
-- That model is not the max performance of this repo, I didn't have enough training time.
+- The model is too big to be uploaded to GitHub, but the study.db and current best hyperparameters are uploaded.
+- That model is not the max performance of this repo, it's still tuning.

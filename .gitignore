@@ -30,4 +30,5 @@ ENV/
 # Model files
 *.pth
 *.ckpt
-*.model 
+*.model
+*.pt
