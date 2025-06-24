@@ -7,6 +7,7 @@ python main.py              # Train the model
 python main.py --tune       # Run hyperparameter tuning
 python main.py --evaluate   # Evaluate model quality
 python main.py --generate   # Generate text using a saved model
+python main.py --interactive # Interactive mode: write your own prompts
 """
 
 import torch
@@ -164,6 +165,121 @@ def run_generation():
         print("-" * 40)
 
 
+def run_interactive_generation():
+    """Interactive mode: Generate text using user-provided prompts."""
+    model = load_latest_model()
+    if model is None:
+        print("No saved model found. Please train a model first.")
+        return
+    
+    tokenizer = get_tokenizer()
+    
+    print("\nInteractive Text Generation Mode")
+    print("="*60)
+    print("Enter your prompts below. Type 'quit' or 'exit' to stop.")
+    print("You can also use 'help' to see available options.\n")
+    
+    # Default generation settings
+    max_length = GENERATION_CONFIG['max_length']
+    temperature = GENERATION_CONFIG['temperature']
+    top_k = None
+    
+    while True:
+        try:
+            # Get user input
+            prompt = input("\nEnter prompt: ").strip()
+            
+            # Check for special commands
+            if prompt.lower() in ['quit', 'exit', 'q']:
+                print("Exiting interactive mode...")
+                break
+            
+            elif prompt.lower() == 'help':
+                print("\nAvailable commands:")
+                print("  quit/exit/q    - Exit interactive mode")
+                print("  help           - Show this help message")
+                print("  settings       - Show current generation settings")
+                print("  temp <value>   - Set temperature (0.1-2.0)")
+                print("  length <value> - Set max generation length")
+                print("  topk <value>   - Set top-k sampling (or 'off' to disable)")
+                continue
+            
+            elif prompt.lower() == 'settings':
+                print(f"\nCurrent settings:")
+                print(f"  Temperature: {temperature}")
+                print(f"  Max length: {max_length}")
+                print(f"  Top-k: {top_k if top_k else 'disabled'}")
+                continue
+            
+            elif prompt.lower().startswith('temp '):
+                try:
+                    new_temp = float(prompt.split()[1])
+                    if 0.1 <= new_temp <= 2.0:
+                        temperature = new_temp
+                        print(f"Temperature set to {temperature}")
+                    else:
+                        print("Temperature must be between 0.1 and 2.0")
+                except (ValueError, IndexError):
+                    print("Invalid temperature value. Use: temp <value>")
+                continue
+            
+            elif prompt.lower().startswith('length '):
+                try:
+                    new_length = int(prompt.split()[1])
+                    if 10 <= new_length <= 1000:
+                        max_length = new_length
+                        print(f"Max length set to {max_length}")
+                    else:
+                        print("Max length must be between 10 and 1000")
+                except (ValueError, IndexError):
+                    print("Invalid length value. Use: length <value>")
+                continue
+            
+            elif prompt.lower().startswith('topk '):
+                try:
+                    topk_value = prompt.split()[1]
+                    if topk_value.lower() == 'off':
+                        top_k = None
+                        print("Top-k sampling disabled")
+                    else:
+                        new_topk = int(topk_value)
+                        if 1 <= new_topk <= 100:
+                            top_k = new_topk
+                            print(f"Top-k set to {top_k}")
+                        else:
+                            print("Top-k must be between 1 and 100")
+                except (ValueError, IndexError):
+                    print("Invalid top-k value. Use: topk <value> or topk off")
+                continue
+            
+            elif not prompt:
+                continue
+            
+            # Generate text
+            print("\nGenerating...")
+            print("-" * 60)
+            
+            # Modified generate_text call to support top_k
+            model.eval()
+            tokens = tokenizer.encode(prompt)
+            input_ids = torch.tensor([tokens], device=DEVICE)
+            generated_ids = model.generate(input_ids, max_length, temperature, top_k)
+            generated_text = tokenizer.decode(generated_ids[0].cpu().tolist())
+            model.train()
+            
+            # Display the generated text
+            print(f"Prompt: {prompt}")
+            print(f"Generated: {generated_text[len(prompt):].strip()}")
+            print("-" * 60)
+            
+        except KeyboardInterrupt:
+            print("\n\nInterrupted. Type 'quit' to exit or continue with a new prompt.")
+            continue
+        except Exception as e:
+            print(f"\nError generating text: {e}")
+            continue
+
+
 def clear_all():
     """Clear all saved models, parameters, and tuning data."""
     files_to_delete = [
@@ -196,6 +312,8 @@ def main():
                        help='Evaluate model quality')
     parser.add_argument('--generate', action='store_true', 
                        help='Generate text using a saved model')
+    parser.add_argument('--interactive', action='store_true',
+                       help='Interactive text generation mode (write your own prompts)')
     parser.add_argument('--clear', action='store_true',
                        help='Clear all saved models and tuning data')
     args = parser.parse_args()
@@ -211,6 +329,8 @@ def main():
             run_evaluation()
         elif args.generate:
             run_generation()
+        elif args.interactive:
+            run_interactive_generation()
         else:
             run_training()
             

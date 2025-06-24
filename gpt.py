@@ -58,7 +58,7 @@ class MultiHeadAttention(nn.Module):
 class FeedForward(nn.Module):
     """Feed-forward network."""
     
-    def __init__(self, embed_size, dropout=None):
+    def __init__(self, embed_size: int, dropout):
         super().__init__()
         dropout_rate = dropout if dropout is not None else MODEL_CONFIG['dropout']
         
